@@ -3,23 +3,44 @@ README
 
 This repository is basically a place for me to store the latest OpenResty + Nginx combinations so that I can use them to provision new servers using Ansible. Feel free to use it directly or fork it.
 
-Contains: OpenResty 1.5.8.1,  Nginx 1.5.9, LuaJit, SSL, Real IP, Gzip static, SPDY, Status, Secure Link, Upload Progress, Auth Digest, Pagespeed, Upstream Fair Load Balancer.
+Contains:
+---------
+* OpenResty 1.5.8.1
+* Nginx 1.5.10
+* LuaJit
+
+Built-in modules:
+-----------------
+* SSL
+* Real IP
+* Gzip static
+* SPDY
+* Status
+* Secure Link
+
+Third party modules:
+--------------------
+* Upload Progress
+* Auth Digest
+* Pagespeed
+* Upstream Fair Load Balancer
 
 This is how you configure it:  
-./configure \  
-	--prefix=/etc \  
-	--with-luajit \  
-	--with-http_ssl_module \  
-	--with-http_realip_module \  
-	--with-http_gzip_static_module \  
-	--with-http_spdy_module \  
-	--with-http_stub_status_module \  
-	--with-http_secure_link_module \  
-	--add-module=packages/nginx-upload-progress-module-master \  
-	--add-module=packages/nginx-http-auth-digest-master \  
-	--add-module=packages/ngx_pagespeed-1.7.30.3-beta \  
-	--add-module=packages/nginx-upstream-fair-master \  
-	-j4
+
+    ./configure \  
+	    --prefix=/etc \  
+        --with-luajit \  
+        --with-http_ssl_module \  
+        --with-http_realip_module \  
+        --with-http_gzip_static_module \  
+        --with-http_spdy_module \  
+        --with-http_stub_status_module \  
+        --with-http_secure_link_module \  
+        --add-module=packages/nginx-upload-progress-module-master \  
+        --add-module=packages/nginx-http-auth-digest-master \  
+        --add-module=packages/ngx_pagespeed-1.7.30.3-beta \  
+        --add-module=packages/nginx-upstream-fair-master \  
+        -j4
 
 
 Name
