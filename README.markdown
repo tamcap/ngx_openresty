@@ -27,20 +27,7 @@ Third party modules:
 
 This is how you configure it:  
 
-    ./configure \  
-	    --prefix=/etc \  
-        --with-luajit \  
-        --with-http_ssl_module \  
-        --with-http_realip_module \  
-        --with-http_gzip_static_module \  
-        --with-http_spdy_module \  
-        --with-http_stub_status_module \  
-        --with-http_secure_link_module \  
-        --add-module=packages/nginx-upload-progress-module-master \  
-        --add-module=packages/nginx-http-auth-digest-master \  
-        --add-module=packages/ngx_pagespeed-1.7.30.3-beta \  
-        --add-module=packages/nginx-upstream-fair-master \  
-        -j4
+./configure --prefix=/etc --with-luajit --with-http_ssl_module --with-http_realip_module --with-http_gzip_static_module --with-http_spdy_module --with-http_stub_status_module --with-http_secure_link_module --add-module=packages/nginx-upload-progress-module-master --add-module=packages/nginx-http-auth-digest-master --add-module=packages/ngx_pagespeed-1.7.30.3-beta --add-module=packages/nginx-upstream-fair-master -j4
 
 
 Name
