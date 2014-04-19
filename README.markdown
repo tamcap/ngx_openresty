@@ -5,8 +5,8 @@ This repository is basically a place for me to store the latest OpenResty + Ngin
 
 Contains:
 ---------
-* OpenResty 1.5.8.1
-* Nginx 1.5.10
+* OpenResty 1.5.11.1
+* Nginx 1.5.13
 * LuaJit
 
 Built-in modules:
@@ -27,13 +27,24 @@ Third party modules:
 
 This is how you configure it:  
 
-./configure --prefix=/etc --with-luajit --with-http_ssl_module --with-http_realip_module --with-http_gzip_static_module --with-http_spdy_module --with-http_stub_status_module --with-http_secure_link_module --add-module=packages/nginx-upload-progress-module-master --add-module=packages/nginx-http-auth-digest-master --add-module=packages/ngx_pagespeed-1.7.30.3-beta --add-module=packages/nginx-upstream-fair-master -j4
+./configure --prefix=/etc --with-luajit --with-http_ssl_module --with-http_realip_module --with-http_gzip_static_module --with-http_spdy_module --with-http_stub_status_module --with-http_secure_link_module --add-module=packages/nginx-upload-progress-module-master --add-module=packages/nginx-http-auth-digest-master --add-module=packages/ngx_pagespeed-1.7.30.4-beta --add-module=packages/nginx-upstream-fair-master -j4
 
 
 Name
 ====
 
 ngx_openresty - Turning Nginx into a full-fledged Web App Server
+
+Table of Contents
+=================
+
+* [Name](#name)
+* [Description](#description)
+    * [For Users](#for-users)
+    * [For Bundle Maintainers](#for-bundle-maintainers)
+* [Mailing List](#mailing-list)
+* [Report Bugs](#report-bugs)
+* [Copyright & License](#copyright--license)
 
 Description
 ===========
@@ -61,7 +72,7 @@ For Bundle Maintainers
 
 The bundle's source is at the following git repository:
 
-    https://github.com/agentzh/ngx_openresty
+https://github.com/agentzh/ngx_openresty
 
 To reproduce the bundle tarball, just do
 
@@ -69,30 +80,36 @@ To reproduce the bundle tarball, just do
 
 at the top of the bundle source tree.
 
+[Back to TOC](#table-of-contents)
+
 Mailing List
 ============
 
 You're very welcome to join the English OpenResty mailing list hosted on Google Groups:
 
-    https://groups.google.com/group/openresty-en
+https://groups.google.com/group/openresty-en
 
 The Chinese mailing list is here:
 
-    https://groups.google.com/group/openresty
+https://groups.google.com/group/openresty
+
+[Back to TOC](#table-of-contents)
 
 Report Bugs
 ===========
 
 You're very welcome to report issues on GitHub:
 
-    https://github.com/agentzh/ngx_openresty/issues
+https://github.com/agentzh/ngx_openresty/issues
+
+[Back to TOC](#table-of-contents)
 
 Copyright & License
 ===================
 
 The bundle itself is licensed under the 2-clause BSD license.
 
-Copyright (c) 2011-2013, Yichun "agentzh" Zhang (章亦春) <agentzh@gmail.com>, CloudFlare Inc.
+Copyright (c) 2011-2014, Yichun "agentzh" Zhang (章亦春) <agentzh@gmail.com>, CloudFlare Inc.
 
 This module is licensed under the terms of the BSD license.
 
@@ -114,4 +131,6 @@ PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
 LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+[Back to TOC](#table-of-contents)
 

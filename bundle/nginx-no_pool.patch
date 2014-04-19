@@ -1,20 +1,18 @@
-diff -upr nginx-1.5.8/src/core/nginx.h nginx-1.5.8-patched/src/core/nginx.h
---- nginx-1.5.8/src/core/nginx.h	2013-05-06 03:26:50.000000000 -0700
-+++ nginx-1.5.8-patched/src/core/nginx.h	2013-06-10 16:12:23.691136795 -0700
+diff -upr nginx-1.5.11/src/core/nginx.h nginx-1.5.11-patched/src/core/nginx.h
+--- nginx-1.5.11/src/core/nginx.h	2013-05-06 03:26:50.000000000 -0700
++++ nginx-1.5.11-patched/src/core/nginx.h	2013-06-10 16:12:23.691136795 -0700
 @@ -10,7 +10,7 @@
  
  
- #define nginx_version      1005008
- #define NGINX_VERSION      "1.5.8"
+ #define nginx_version      1005011
+ #define NGINX_VERSION      "1.5.11"
 -#define NGINX_VER          "openresty/" NGINX_VERSION ".1"
 +#define NGINX_VER          "openresty/" NGINX_VERSION ".1 (no pool)"
  
  #define NGINX_VAR          "NGINX"
-Only in nginx-1.5.8-patched/src/core: nginx.h.orig
-Only in nginx-1.5.8-patched/src/core: nginx.h.rej
-diff -upr nginx-1.5.8/src/core/ngx_array.c nginx-1.5.8-patched/src/core/ngx_array.c
---- nginx-1.5.8/src/core/ngx_array.c	2013-05-06 03:26:50.000000000 -0700
-+++ nginx-1.5.8-patched/src/core/ngx_array.c	2013-06-10 16:12:23.692136802 -0700
+diff -urp nginx-1.5.11/src/core/ngx_array.c nginx-1.5.11-patched/src/core/ngx_array.c
+--- nginx-1.5.11/src/core/ngx_array.c	2014-01-22 05:43:00.000000000 -0800
++++ nginx-1.5.11-patched/src/core/ngx_array.c	2014-01-27 21:25:14.887049509 -0800
 @@ -30,26 +30,30 @@ ngx_array_create(ngx_pool_t *p, ngx_uint
  void
  ngx_array_destroy(ngx_array_t *a)
@@ -169,11 +167,9 @@ diff -upr nginx-1.5.8/src/core/ngx_array.c nginx-1.5.8-patched/src/core/ngx_arra
      }
  
      elt = (u_char *) a->elts + a->size * a->nelts;
-Only in nginx-1.5.8-patched/src/core: ngx_array.c.orig
-Only in nginx-1.5.8-patched/src/core: ngx_array.c.rej
-diff -upr nginx-1.5.8/src/core/ngx_array.h nginx-1.5.8-patched/src/core/ngx_array.h
---- nginx-1.5.8/src/core/ngx_array.h	2013-05-06 03:26:50.000000000 -0700
-+++ nginx-1.5.8-patched/src/core/ngx_array.h	2013-06-10 16:15:08.314275482 -0700
+diff -urp nginx-1.5.11/src/core/ngx_array.h nginx-1.5.11-patched/src/core/ngx_array.h
+--- nginx-1.5.11/src/core/ngx_array.h	2014-01-22 05:43:00.000000000 -0800
++++ nginx-1.5.11-patched/src/core/ngx_array.h	2014-01-27 21:25:14.888049518 -0800
 @@ -13,12 +13,23 @@
  #include <ngx_core.h>
  
@@ -206,11 +202,9 @@ diff -upr nginx-1.5.8/src/core/ngx_array.h nginx-1.5.8-patched/src/core/ngx_arra
  
      array->elts = ngx_palloc(pool, n * size);
      if (array->elts == NULL) {
-Only in nginx-1.5.8-patched/src/core: ngx_array.h.orig
-Only in nginx-1.5.8-patched/src/core: ngx_array.h.rej
-diff -upr nginx-1.5.8/src/core/ngx_palloc.c nginx-1.5.8-patched/src/core/ngx_palloc.c
---- nginx-1.5.8/src/core/ngx_palloc.c	2013-05-06 03:26:50.000000000 -0700
-+++ nginx-1.5.8-patched/src/core/ngx_palloc.c	2013-06-10 16:12:23.718136984 -0700
+diff -urp nginx-1.5.11/src/core/ngx_palloc.c nginx-1.5.11-patched/src/core/ngx_palloc.c
+--- nginx-1.5.11/src/core/ngx_palloc.c	2014-01-22 05:43:00.000000000 -0800
++++ nginx-1.5.11-patched/src/core/ngx_palloc.c	2014-01-27 21:42:30.905552064 -0800
 @@ -9,32 +9,23 @@
  #include <ngx_core.h>
  
@@ -287,7 +281,7 @@ diff -upr nginx-1.5.8/src/core/ngx_palloc.c nginx-1.5.8-patched/src/core/ngx_pal
  
          if (n == NULL) {
              break;
-@@ -83,172 +69,82 @@ ngx_destroy_pool(ngx_pool_t *pool)
+@@ -83,175 +69,84 @@ ngx_destroy_pool(ngx_pool_t *pool)
  
  #endif
  
@@ -317,11 +311,14 @@ diff -upr nginx-1.5.8/src/core/ngx_palloc.c nginx-1.5.8-patched/src/core/ngx_pal
 -        }
 -    }
 -
--    pool->large = NULL;
--
 -    for (p = pool; p; p = p->d.next) {
 -        p->d.last = (u_char *) p + sizeof(ngx_pool_t);
+-        p->d.failed = 0;
 -    }
+-
+-    pool->current = pool;
+-    pool->chain = NULL;
+-    pool->large = NULL;
 +    ngx_free(pool);
  }
  
@@ -395,6 +392,8 @@ diff -upr nginx-1.5.8/src/core/ngx_palloc.c nginx-1.5.8-patched/src/core/ngx_pal
 -
 -        return ngx_palloc_block(pool, size);
 +        pool->d = saved;
++        pool->current = pool;
++        pool->chain = NULL;
      }
 -
 -    return ngx_palloc_large(pool, size);
@@ -502,7 +501,7 @@ diff -upr nginx-1.5.8/src/core/ngx_palloc.c nginx-1.5.8-patched/src/core/ngx_pal
  }
  
  
-@@ -256,38 +152,48 @@ void *
+@@ -259,38 +154,48 @@ void *
  ngx_pmemalign(ngx_pool_t *pool, size_t size, size_t alignment)
  {
      void              *p;
@@ -566,9 +565,9 @@ diff -upr nginx-1.5.8/src/core/ngx_palloc.c nginx-1.5.8-patched/src/core/ngx_pal
  
              return NGX_OK;
          }
-diff -upr nginx-1.5.8/src/core/ngx_palloc.h nginx-1.5.8-patched/src/core/ngx_palloc.h
---- nginx-1.5.8/src/core/ngx_palloc.h	2013-05-06 03:26:50.000000000 -0700
-+++ nginx-1.5.8-patched/src/core/ngx_palloc.h	2013-06-10 16:12:23.720136999 -0700
+diff -urp nginx-1.5.11/src/core/ngx_palloc.h nginx-1.5.11-patched/src/core/ngx_palloc.h
+--- nginx-1.5.11/src/core/ngx_palloc.h	2014-01-22 05:43:00.000000000 -0800
++++ nginx-1.5.11-patched/src/core/ngx_palloc.h	2014-01-27 21:25:14.911049721 -0800
 @@ -38,28 +38,21 @@ struct ngx_pool_cleanup_s {
  };
  
