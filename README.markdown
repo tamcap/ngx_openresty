@@ -5,8 +5,8 @@ This repository is basically a place for me to store the latest OpenResty + Ngin
 
 Contains:
 ---------
-* OpenResty 1.5.11.1
-* Nginx 1.5.13
+* OpenResty 1.5.12.1
+* Nginx 1.7.0
 * LuaJit
 
 Built-in modules:
