@@ -5,18 +5,19 @@ This repository is basically a place for me to store the latest OpenResty + Ngin
 
 Contains:
 ---------
-* OpenResty 1.7.2.1
-* Nginx 1.7.4
+* OpenResty 1.7.7.2
+* Nginx 1.7.9
 * LuaJit
 
 Built-in modules:
 -----------------
-* SSL
-* Real IP
+* GeoIP
 * Gzip static
-* SPDY
-* Status
+* Real IP
 * Secure Link
+* SPDY
+* SSL
+* Status
 
 Third party modules:
 --------------------
@@ -25,9 +26,22 @@ Third party modules:
 * Pagespeed
 * Upstream Fair Load Balancer
 
-This is how you configure it:  
+This is how you configure it:
 
-./configure --prefix=/etc --with-luajit --with-http_ssl_module --with-http_realip_module --with-http_gzip_static_module --with-http_spdy_module --with-http_stub_status_module --with-http_secure_link_module --add-module=packages/nginx-upload-progress-module-master --add-module=packages/nginx-http-auth-digest-master --add-module=packages/ngx_pagespeed-1.8.31.4-beta --add-module=packages/nginx-upstream-fair-master -j4
+./configure --prefix=/etc \
+--with-luajit \
+--with-http_ssl_module \
+--with-http_realip_module \
+--with-http_gzip_static_module \
+--with-http_spdy_module \
+--with-http_stub_status_module \
+--with-http_secure_link_module \
+--with-http_geoip_module \
+--add-module=packages/nginx-upload-progress-module-0.9.1 \
+--add-module=packages/nginx-http-auth-digest-master \
+--add-module=packages/ngx_pagespeed-release-1.9.32.3-beta \
+--add-module=packages/nginx-upstream-fair-master \
+-j4
 
 
 Name

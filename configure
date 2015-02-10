@@ -123,6 +123,10 @@ my $luajit_xcflags = '';
 
 my (@ngx_opts, @ngx_cc_opts, @ngx_ld_opts);
 
+# use -O2 to compile everything by default (which can be overridden
+# by the user's own --with-cc-opt=OPTS option):
+push @ngx_cc_opts, "-O2";
+
 for my $opt (@ARGV) {
     next unless defined $opt;
 
@@ -294,7 +298,7 @@ if (@ngx_ld_opts) {
     $ld_opts = " \\\n  --with-ld-opt='@ngx_ld_opts'";
 }
 
-my $cmd = "./configure --prefix=$ngx_prefix"
+my $cmd = "sh ./configure --prefix=$ngx_prefix"
     . $resty_opts
     . $ld_opts
     . (@ngx_opts ? " \\\n  @ngx_opts" : "");
@@ -417,7 +421,7 @@ _END_
     }
 
     if ($opts->{luajit} && $opts->{luajit_path}) {
-        die "--with-luajit and --with-luajit=PATH are mutually exclusive.\n";
+        die "--with-luajit and --with-luajit=DIR are mutually exclusive.\n";
     }
 
     if ($opts->{no_http_ssl} && $opts->{http_ssl}) {
@@ -455,17 +459,13 @@ _END_
         #unshift @ngx_cc_opts, '-O2';
     }
 
-    if (@ngx_cc_opts) {
-        $opts_line .= " \\\n  --with-cc-opt='@ngx_cc_opts'";
-    }
-
     if (-d 'build') {
         system("rm -rf build") == 0 or
             die "failed to remove directory build/.\n";
     }
 
-    if (-f 'build') {
-        die "file \"build\" already exists. please remove it first.\n";
+    if (-e 'build') {
+        die "file or directory \"build\" already exists. please remove it first.\n";
     }
     shell "cp -rp bundle/ build";
 
@@ -521,8 +521,15 @@ _END_
 
     if ($opts->{luajit_path}) {
         my $luajit_prefix = $opts->{luajit_path};
-        env LUAJIT_LIB => "$luajit_prefix/lib";
-        env LUAJIT_INC => "$luajit_prefix/include/luajit-2.1";
+
+        my $lib = "$luajit_prefix/lib";
+        my $inc = "$luajit_prefix/include/luajit-2.1";
+
+        env LUAJIT_LIB => $lib;
+        env LUAJIT_INC => $inc;
+
+        unshift @ngx_ld_opts, "-L$lib";
+        unshift @ngx_cc_opts, "-I$inc";
 
         push @ngx_rpaths, "$luajit_prefix/lib";
 
@@ -584,8 +591,14 @@ _END_
         push @make_install_cmds, "cd $root_dir/build/$luajit_src && "
             . "\$(MAKE) install$extra_opts PREFIX=$luajit_prefix DESTDIR=\$(DESTDIR)";
 
-        env LUAJIT_LIB => "$luajit_root$luajit_prefix/lib";
-        env LUAJIT_INC => "$luajit_root$luajit_prefix/include/luajit-2.1";
+        my $lib = "$luajit_root$luajit_prefix/lib";
+        my $inc = "$luajit_root$luajit_prefix/include/luajit-2.1";
+
+        env LUAJIT_LIB => $lib;
+        env LUAJIT_INC => $inc;
+
+        unshift @ngx_ld_opts, "-L$lib";
+        unshift @ngx_cc_opts, "-I$inc";
 
         push @ngx_rpaths, "$luajit_prefix/lib";
 
@@ -829,9 +842,19 @@ _EOC_
         }
     }
 
+    # configure resty-cli:
+
+    my $resty_cli_dir = auto_complete 'resty-cli';
+    push @make_install_cmds, "cd $root_dir/build/$resty_cli_dir && "
+         . "$root_dir/build/install resty \$(DESTDIR)/$prefix/bin/";
+
     # prepare nginx configure line
 
     $ngx_dir = auto_complete "nginx";
+
+    if (@ngx_cc_opts) {
+        $opts_line .= " \\\n  --with-cc-opt='@ngx_cc_opts'";
+    }
 
     cd $ngx_dir;
 
@@ -858,7 +881,7 @@ sub usage ($) {
     my $msg = <<'_EOC_';
   --help                             this message
 
-  --prefix=PATH                      set the installation prefix
+  --prefix=PATH                      set the installation prefix (default to /usr/local/openresty).
 
   --with-debug                       enable the debugging logging and also enable -O0 -g for the C compiler.
                                      this not only affects nginx, but also other components.
@@ -942,9 +965,9 @@ _EOC_
 
   --with-lua51                       enable and build the bundled standard Lua 5.1 interpreter
   --without-lua51                    disable the bundled standard Lua 5.1 interpreter
-  --with-lua51=PATH                  specify the external installation of Lua 5.1 by PATH
+  --with-lua51=DIR                   specify the external installation of Lua 5.1 by DIR
   --with-luajit                      enable and build the bundled LuaJIT 2.1 (the default)
-  --with-luajit=PATH                 use the external LuaJIT 2.1 installation specified by PATH
+  --with-luajit=DIR                  use the external LuaJIT 2.1 installation specified by DIR
   --with-luajit-xcflags=FLAGS        Specify extra C compiler flags for LuaJIT 2.1
   --with-libdrizzle=DIR              specify the libdrizzle 1.0 (or drizzle) installation prefix
   --with-libpq=DIR                   specify the libpq (or postgresql) installation prefix
