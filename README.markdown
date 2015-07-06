@@ -5,8 +5,8 @@ This repository is basically a place for me to store the latest OpenResty + Ngin
 
 Contains:
 ---------
-* OpenResty 1.7.7.2
-* Nginx 1.7.9
+* OpenResty 1.7.10.2
+* Nginx 1.9.2
 * LuaJit
 
 Built-in modules:
@@ -28,21 +28,20 @@ Third party modules:
 
 This is how you configure it:
 
-./configure --prefix=/etc \
---with-luajit \
---with-http_ssl_module \
---with-http_realip_module \
---with-http_gzip_static_module \
---with-http_spdy_module \
---with-http_stub_status_module \
---with-http_secure_link_module \
---with-http_geoip_module \
---add-module=packages/nginx-upload-progress-module-0.9.1 \
---add-module=packages/nginx-http-auth-digest-master \
---add-module=packages/ngx_pagespeed-release-1.9.32.3-beta \
---add-module=packages/nginx-upstream-fair-master \
--j4
-
+    ./configure --prefix=/etc \
+    --with-luajit \
+    --with-http_ssl_module \
+    --with-http_realip_module \
+    --with-http_gzip_static_module \
+    --with-http_spdy_module \
+    --with-http_stub_status_module \
+    --with-http_secure_link_module \
+    --with-http_geoip_module \
+    --add-module=packages/nginx-upload-progress-module-0.9.1 \
+    --add-module=packages/nginx-http-auth-digest-master \
+    --add-module=packages/ngx_pagespeed-release-1.9.32.4 \
+    --add-module=packages/nginx-upstream-fair-master \
+    -j4
 
 Name
 ====
@@ -86,7 +85,7 @@ For Bundle Maintainers
 
 The bundle's source is at the following git repository:
 
-https://github.com/agentzh/ngx_openresty
+https://github.com/openresty/ngx_openresty
 
 To reproduce the bundle tarball, just do
 
@@ -123,7 +122,7 @@ Copyright & License
 
 The bundle itself is licensed under the 2-clause BSD license.
 
-Copyright (c) 2011-2014, Yichun "agentzh" Zhang (章亦春) <agentzh@gmail.com>, CloudFlare Inc.
+Copyright (c) 2011-2015, Yichun "agentzh" Zhang (章亦春) <agentzh@gmail.com>, CloudFlare Inc.
 
 This module is licensed under the terms of the BSD license.
 

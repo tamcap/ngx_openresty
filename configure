@@ -163,6 +163,12 @@ for my $opt (@ARGV) {
     } elsif ($opt =~ /^--with-lua51=(.*)/) {
         $resty_opts{lua_path} = $1;
 
+    } elsif ($opt eq '--without-http_rewrite_module') {
+        warn "WARNING: ngx_devel_kit is automatically disabled ",
+            "because ngx_http_rewrite_module is disabled.\n";
+        $resty_opts{no_ndk} = 1;
+        push @ngx_opts, $opt;
+
     } elsif ($opt eq '--without-lua_cjson') {
         $resty_opts{no_lua_cjson} = 1;
 
@@ -402,7 +408,7 @@ Type the following commands to build and install:
 _END_
 
     if ($opts->{no_ndk}) {
-        for my $name (qw(lua set_misc iconv lz_session form_input array_var)) {
+        for my $name (qw(set_misc iconv lz_session form_input array_var encrypted_session)) {
             if (! $opts->{"no_http_$name"}) {
                 warn "WARNING: ngx_http_${name}_module is automatically disabled ",
                     "because ngx_devel_kit_module is disabled.\n";
@@ -528,8 +534,8 @@ _END_
         env LUAJIT_LIB => $lib;
         env LUAJIT_INC => $inc;
 
-        unshift @ngx_ld_opts, "-L$lib";
-        unshift @ngx_cc_opts, "-I$inc";
+        #unshift @ngx_ld_opts, "-L$lib";
+        #unshift @ngx_cc_opts, "-I$inc";
 
         push @ngx_rpaths, "$luajit_prefix/lib";
 
@@ -548,6 +554,17 @@ _END_
         cd $luajit_src;
 
         my $extra_opts = ' TARGET_STRIP=@: CCDEBUG=-g';
+
+       {
+            my $comp = ($cc || 'cc');
+            my $ver = `$comp --version`;
+            if (defined $ver && $ver =~ /\(GCC\) (\d+\.\d+)/) {
+                my $v = $1;
+                if ($v < 4.5) {
+                    $luajit_xcflags .= " -std=gnu99";
+                }
+            }
+        }
 
         if ($opts->{debug}) {
             $luajit_xcflags .= " -DLUA_USE_APICHECK -DLUA_USE_ASSERT";
@@ -597,8 +614,8 @@ _END_
         env LUAJIT_LIB => $lib;
         env LUAJIT_INC => $inc;
 
-        unshift @ngx_ld_opts, "-L$lib";
-        unshift @ngx_cc_opts, "-I$inc";
+        #unshift @ngx_ld_opts, "-L$lib";
+        #unshift @ngx_cc_opts, "-I$inc";
 
         push @ngx_rpaths, "$luajit_prefix/lib";
 
@@ -1031,12 +1048,16 @@ Options directly inherited from nginx
   --without-http_uwsgi_module        disable ngx_http_uwsgi_module
   --without-http_scgi_module         disable ngx_http_scgi_module
   --without-http_memcached_module    disable ngx_http_memcached_module
-  --without-http_limit_zone_module   disable ngx_http_limit_zone_module
+  --without-http_limit_conn_module   disable ngx_http_limit_conn_module
   --without-http_limit_req_module    disable ngx_http_limit_req_module
   --without-http_empty_gif_module    disable ngx_http_empty_gif_module
   --without-http_browser_module      disable ngx_http_browser_module
   --without-http_upstream_ip_hash_module
                                      disable ngx_http_upstream_ip_hash_module
+  --without-http_upstream_least_conn_module
+                                     disable ngx_http_upstream_least_conn_module
+  --without-http_upstream_keepalive_module
+                                     disable ngx_http_upstream_keepalive_module
 
   --with-http_perl_module            enable ngx_http_perl_module
   --with-perl_modules_path=PATH      set path to the perl modules

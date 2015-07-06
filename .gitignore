@@ -1,2 +1,3 @@
 build/
-packages/ngx_pagespeed-1.8.31.4-beta/psol/
+packages/ngx_pagespeed-release-1.9.32.4/psol/
+Makefile
