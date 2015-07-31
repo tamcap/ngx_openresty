@@ -295,7 +295,8 @@ void copy_response_headers_from_ngx(const ngx_http_request_t* r,
 
   // When we don't have a date header, set one with the current time.
   if (headers->Lookup1(HttpAttributes::kDate) == NULL) {
-    headers->SetDate(ngx_current_msec);
+    PosixTimer timer;
+    headers->SetDate(timer.NowMs());
   }
 
   // TODO(oschaaf): ComputeCaching should be called in setupforhtml()?
@@ -342,10 +343,17 @@ ngx_int_t copy_response_headers_to_ngx(
 
     ngx_str_t name, value;
 
+    // If the gzip module is not configured, we must not rename the header,
+    // because we will fail to inject the header filter that will rename the
+    // header back.
+    bool gzip_enabled = false;
+#if (NGX_HTTP_GZIP)
+    gzip_enabled = true;
+#endif
     // To prevent the gzip module from clearing weak etags, we output them
     // using a different name here. The etag header filter module runs behind
     // the gzip compressors header filter, and will rename it to 'ETag'
-    if (StringCaseEqual(name_gs, "etag")
+    if (gzip_enabled && StringCaseEqual(name_gs, "etag")
         && StringCaseStartsWith(value_gs, "W/")) {
       name.len = strlen(kInternalEtagName);
       name.data = reinterpret_cast<u_char*>(
@@ -354,6 +362,7 @@ ngx_int_t copy_response_headers_to_ngx(
       name.len = name_gs.length();
       name.data = reinterpret_cast<u_char*>(const_cast<char*>(name_gs.data()));
     }
+
     value.len = value_gs.length();
     value.data = reinterpret_cast<u_char*>(const_cast<char*>(value_gs.data()));
 
@@ -400,8 +409,6 @@ ngx_int_t copy_response_headers_to_ngx(
     } else if (STR_EQ_LITERAL(name, "Keep-Alive")) {
       continue;
     } else if (STR_EQ_LITERAL(name, "Transfer-Encoding")) {
-      continue;
-    } else if (STR_EQ_LITERAL(name, "Server")) {
       continue;
     }
 
@@ -1630,7 +1637,8 @@ void ps_release_base_fetch(ps_request_ctx_t* ctx) {
 
 // TODO(chaizhenhua): merge into NgxBaseFetch ctor
 ngx_int_t ps_create_base_fetch(ps_request_ctx_t* ctx,
-                               RequestContextPtr request_context) {
+                               RequestContextPtr request_context,
+                               RequestHeaders* request_headers) {
   ngx_http_request_t* r = ctx->r;
   ps_srv_conf_t* cfg_s = ps_get_srv_config(r);
   int file_descriptors[2];
@@ -1673,6 +1681,7 @@ ngx_int_t ps_create_base_fetch(ps_request_ctx_t* ctx,
   ctx->base_fetch = new NgxBaseFetch(
       r, file_descriptors[1], cfg_s->server_context,
       request_context, ctx->preserve_caching_headers);
+  ctx->base_fetch->SetRequestHeadersTakingOwnership(request_headers);
 
   return NGX_OK;
 }
@@ -1700,8 +1709,8 @@ void ps_release_request_context(void* data) {
   }
 
   if (ctx->recorder != NULL) {
-    ctx->recorder->Fail();
-    ctx->recorder->DoneAndSetHeaders(NULL);  // Deletes recorder.
+    // Deletes recorder.
+    ctx->recorder->DoneAndSetHeaders(NULL, false /* incomplete response */);
     ctx->recorder = NULL;
   }
 
@@ -1808,7 +1817,10 @@ ngx_int_t ps_resource_handler(ngx_http_request_t* r,
   GoogleString url_string = ps_determine_url(r);
   GoogleUrl url(url_string);
 
-  CHECK(url.IsWebValid());
+  if (!url.IsWebValid()) {
+    ngx_log_error(NGX_LOG_ERR, r->connection->log, 0, "invalid url");
+    return NGX_DECLINED;
+  }
 
   scoped_ptr<RequestHeaders> request_headers(new RequestHeaders);
   scoped_ptr<ResponseHeaders> response_headers(new ResponseHeaders);
@@ -1923,35 +1935,17 @@ ngx_int_t ps_resource_handler(ngx_http_request_t* r,
     ngx_http_set_ctx(r, ctx, ngx_pagespeed);
   }
 
-  if (ps_create_base_fetch(ctx, request_context) != NGX_OK) {
-    // Do not need to release request context 'ctx'.
-    // http_pool_cleanup will call ps_release_request_context
-    return NGX_ERROR;
-  }
-
-  ctx->base_fetch->SetRequestHeadersTakingOwnership(request_headers.release());
-
-  bool page_callback_added = false;
-  scoped_ptr<ProxyFetchPropertyCallbackCollector>
-      property_callback(
-          ProxyFetchFactory::InitiatePropertyCacheLookup(
-              !html_rewrite /* is_resource_fetch */,
-              url,
-              cfg_s->server_context,
-              options,
-              ctx->base_fetch,
-              false /* requires_blink_cohort (no longer unused) */,
-              &page_callback_added));
-
   if (pagespeed_resource) {
     // TODO(jefftk): Set using_spdy appropriately.  See
     // ProxyInterface::ProxyRequestCallback
+    ps_create_base_fetch(ctx, request_context, request_headers.release());
     ResourceFetch::Start(
         url,
         custom_options.release() /* null if there aren't custom options */,
         false /* using_spdy */, cfg_s->server_context, ctx->base_fetch);
     return ps_async_wait_response(r);
   } else if (is_an_admin_handler) {
+    ps_create_base_fetch(ctx, request_context, request_headers.release());
     QueryParams query_params;
     query_params.ParseFromUrl(url);
 
@@ -1995,6 +1989,7 @@ ngx_int_t ps_resource_handler(ngx_http_request_t* r,
   }
 
   if (html_rewrite) {
+    ps_create_base_fetch(ctx, request_context, request_headers.release());
     // Do not store driver in request_context, it's not safe.
     RewriteDriver* driver;
 
@@ -2021,12 +2016,22 @@ ngx_int_t ps_resource_handler(ngx_http_request_t* r,
     driver->set_pagespeed_option_cookies(pagespeed_option_cookies);
 
     // TODO(jefftk): FlushEarlyFlow would go here.
+    bool page_callback_added = false;
+    ProxyFetchPropertyCallbackCollector* property_callback =
+        ProxyFetchFactory::InitiatePropertyCacheLookup(
+            !html_rewrite /* is_resource_fetch */,
+            url,
+            cfg_s->server_context,
+            options,
+            ctx->base_fetch,
+            false /* requires_blink_cohort (no longer unused) */,
+            &page_callback_added);
 
     // Will call StartParse etc.  The rewrite driver will take care of deleting
     // itself if necessary.
     ctx->proxy_fetch = cfg_s->proxy_fetch_factory->CreateNewProxyFetch(
         url_string, ctx->base_fetch, driver,
-        property_callback.release(),
+        property_callback,
         NULL /* original_content_fetch */);
     return NGX_OK;
   }
@@ -2034,6 +2039,7 @@ ngx_int_t ps_resource_handler(ngx_http_request_t* r,
   if (options->in_place_rewriting_enabled() &&
       options->enabled() &&
       options->IsAllowed(url.Spec())) {
+    ps_create_base_fetch(ctx, request_context, request_headers.release());
     // Do not store driver in request_context, it's not safe.
     RewriteDriver* driver;
     if (custom_options.get() == NULL) {
@@ -2073,8 +2079,7 @@ ngx_int_t ps_resource_handler(ngx_http_request_t* r,
                 "Passing on content handling for non-pagespeed resource '%s'",
                 url_string.c_str());
 
-  ctx->base_fetch->Done(false);
-  ps_release_base_fetch(ctx);
+  CHECK(ctx->base_fetch == NULL);
   // set html_rewrite flag.
   ctx->html_rewrite = true;
   return NGX_DECLINED;
@@ -2279,14 +2284,13 @@ ngx_int_t ps_html_rewrite_header_filter(ngx_http_request_t* r) {
     if (!ps_has_stacked_content_encoding(r)) {
       StringPiece content_encoding =
           str_to_string_piece(r->headers_out.content_encoding->value);
-      GzipInflater::InflateType inflate_type;
+      GzipInflater::InflateType inflate_type = GzipInflater::kGzip;
       bool is_encoded = false;
       if (StringCaseEqual(content_encoding, "deflate")) {
         is_encoded = true;
         inflate_type = GzipInflater::kDeflate;
       } else if (StringCaseEqual(content_encoding, "gzip")) {
         is_encoded = true;
-        inflate_type = GzipInflater::kGzip;
       }
 
       if (is_encoded) {
@@ -2502,7 +2506,9 @@ ngx_int_t ps_in_place_body_filter(ngx_http_request_t* r, ngx_chain_t* in) {
     if (cl->buf->last_buf || recorder->failed()) {
       ResponseHeaders response_headers;
       copy_response_headers_from_ngx(r, &response_headers);
-      ctx->recorder->DoneAndSetHeaders(&response_headers);
+      ctx->recorder->DoneAndSetHeaders(
+          &response_headers,
+          cl->buf->last_buf /* response is complete if last_buf is set */);
       ctx->recorder = NULL;
       break;
     }

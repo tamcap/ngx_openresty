@@ -23,7 +23,7 @@ Third party modules:
 --------------------
 * Upload Progress
 * Auth Digest
-* Pagespeed
+* ngx_pagespeed 1.9.32.6
 * Upstream Fair Load Balancer
 
 This is how you configure it:
@@ -39,7 +39,7 @@ This is how you configure it:
     --with-http_geoip_module \
     --add-module=packages/nginx-upload-progress-module-0.9.1 \
     --add-module=packages/nginx-http-auth-digest-master \
-    --add-module=packages/ngx_pagespeed-release-1.9.32.4 \
+    --add-module=packages/ngx_pagespeed-release-1.9.32.6 \
     --add-module=packages/nginx-upstream-fair-master \
     -j4
 
