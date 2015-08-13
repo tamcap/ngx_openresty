@@ -33,6 +33,8 @@ for my $opt (@ARGV) {
     }
 }
 
+my @extra_make_env;
+
 my ($platform, $on_solaris);
 
 if ($OS =~ /solaris|sunos/i) {
@@ -276,8 +278,15 @@ for my $opt (@ARGV) {
 
     } elsif ($opt =~ /^--with-(openssl|pcre|zlib|libatomic|md5|sha1)=(.*)/) {
 
-        my $path = File::Spec->rel2abs($2);
-        push @ngx_opts, "--with-$1=$path";
+        my ($lib, $path) = ($1, $2);
+        if ($lib eq 'openssl' && $OS eq 'darwin') {
+            if (`uname -a` =~ /\bx86_64\b/) {
+                $ENV{KERNEL_BITS} = 64;
+                push @extra_make_env, 'KERNEL_BITS=64';
+            }
+        }
+        $path = File::Spec->rel2abs($path);
+        push @ngx_opts, "--with-$lib=$path";
 
     } elsif ($opt =~ /^--\w.*/) {
         push @ngx_opts, $opt;
@@ -898,17 +907,16 @@ sub usage ($) {
     my $msg = <<'_EOC_';
   --help                             this message
 
-  --prefix=PATH                      set the installation prefix (default to /usr/local/openresty).
+  --prefix=PATH                      set the installation prefix (default to /usr/local/openresty)
 
-  --with-debug                       enable the debugging logging and also enable -O0 -g for the C compiler.
-                                     this not only affects nginx, but also other components.
+  --with-debug                       enable debug logging
   --with-dtrace-probes               enable dtrace USDT probes
   --with-dtrace=PATH                 set dtrace utility pathname
 
-  --with-no-pool-patch               enable the no-pool patch for debugging memory issues.
+  --with-no-pool-patch               enable the no-pool patch for debugging memory issues
 
   -jN                                pass -jN option to make while building the bundled
-                                     Lua 5.1 interpreter or LuaJIT 2.1.
+                                     Lua 5.1 interpreter or LuaJIT 2.1
 
 _EOC_
 
@@ -1007,11 +1015,12 @@ Options directly inherited from nginx
 
   --builddir=DIR                     set the build directory
 
-  --with-rtsig_module                enable rtsig module
   --with-select_module               enable select module
   --without-select_module            disable select module
   --with-poll_module                 enable poll module
   --without-poll_module              disable poll module
+
+  --with-threads                     enable thread pool support
 
   --with-file-aio                    enable file aio support
   --with-ipv6                        enable ipv6 support
@@ -1139,6 +1148,10 @@ _EOC_
 sub gen_makefile {
     open my $out, ">Makefile" or
         die "Cannot open Makefile for writing: $!\n";
+
+    for my $line (@extra_make_env) {
+        print $out "export $line\n";
+    }
 
     print $out ".PHONY: all install clean\n\n";
 
