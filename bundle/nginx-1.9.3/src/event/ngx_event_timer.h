@@ -12,7 +12,6 @@
 #include <ngx_config.h>
 #include <ngx_core.h>
 #include <ngx_event.h>
-#include <ngx_event_probe.h>
 
 
 #define NGX_TIMER_INFINITE  (ngx_msec_t) -1
@@ -32,8 +31,6 @@ extern ngx_rbtree_t  ngx_event_timer_rbtree;
 static ngx_inline void
 ngx_event_del_timer(ngx_event_t *ev)
 {
-    ngx_event_probe_timer_del(ev);
-
     ngx_log_debug2(NGX_LOG_DEBUG_EVENT, ev->log, 0,
                    "event timer del: %d: %M",
                     ngx_event_ident(ev->data), ev->timer.key);
@@ -79,8 +76,6 @@ ngx_event_add_timer(ngx_event_t *ev, ngx_msec_t timer)
     }
 
     ev->timer.key = key;
-
-    ngx_event_probe_timer_add(ev, timer);
 
     ngx_log_debug3(NGX_LOG_DEBUG_EVENT, ev->log, 0,
                    "event timer add: %d: %M:%M",

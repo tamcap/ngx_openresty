@@ -1423,7 +1423,6 @@ ngx_http_upstream_connect(ngx_http_request_t *r, ngx_http_upstream_t *u)
     }
 
     u->request_sent = 0;
-    u->request_all_sent = 0;
 
     if (rc == NGX_AGAIN) {
         ngx_add_timer(c->write, u->conf->connect_timeout);
@@ -1812,8 +1811,6 @@ ngx_http_upstream_send_request(ngx_http_request_t *r, ngx_http_upstream_t *u,
         ngx_del_timer(c->write);
     }
 
-    u->request_all_sent = 1;
-
     if (c->tcp_nopush == NGX_TCP_NOPUSH_SET) {
         if (ngx_tcp_push(c->fd) == NGX_ERROR) {
             ngx_log_error(NGX_LOG_CRIT, c->log, ngx_socket_errno,
@@ -1985,7 +1982,7 @@ ngx_http_upstream_send_request_handler(ngx_http_request_t *r,
 
 #endif
 
-    if (u->request_all_sent) {
+    if (u->header_sent) {
         u->write_event_handler = ngx_http_upstream_dummy_handler;
 
         (void) ngx_handle_write_event(c->write, 0);
