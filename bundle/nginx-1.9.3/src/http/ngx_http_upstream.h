@@ -369,6 +369,7 @@ struct ngx_http_upstream_s {
     unsigned                         upgrade:1;
 
     unsigned                         request_sent:1;
+    unsigned                         request_all_sent:1;
     unsigned                         header_sent:1;
 };
 
