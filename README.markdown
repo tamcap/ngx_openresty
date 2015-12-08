@@ -5,7 +5,7 @@ This repository is basically a place for me to store the latest OpenResty + Ngin
 
 Contains:
 ---------
-* OpenResty 1.9.3.1
+* OpenResty 1.9.3.2
 * Nginx 1.9.3
 * LuaJit
 
@@ -23,8 +23,9 @@ Third party modules:
 --------------------
 * Upload Progress
 * Auth Digest
-* ngx_pagespeed 1.9.32.6
+* ngx_pagespeed 1.9.32.10
 * Upstream Fair Load Balancer
+* Mod Zip
 
 This is how you configure it:
 
@@ -39,8 +40,9 @@ This is how you configure it:
     --with-http_geoip_module \
     --add-module=packages/nginx-upload-progress-module-0.9.1 \
     --add-module=packages/nginx-http-auth-digest-master \
-    --add-module=packages/ngx_pagespeed-release-1.9.32.6 \
+    --add-module=packages/ngx_pagespeed-release-1.9.32.10 \
     --add-module=packages/nginx-upstream-fair-master \
+    --add-module=packages/mod_zip-master \
     -j4
 
 Name
@@ -89,7 +91,9 @@ https://github.com/openresty/ngx_openresty
 
 To reproduce the bundle tarball, just do
 
-    make
+```bash
+make
+```
 
 at the top of the bundle source tree.
 
