@@ -97,6 +97,18 @@ make
 
 at the top of the bundle source tree.
 
+<<<<<<< HEAD
+=======
+Please note that you may need to install some extra dependencies, like `perl`, `dos2unix` and
+the Perl CPAN mdoule `Markdown::Pod`. On Fedora 22, for example, installing the dependencies
+is as simple as running the following commands:
+
+```bash
+sudo dnf install perl dos2unix
+sudo cpan Markdown::Pod
+```
+
+>>>>>>> upstream/master
 [Back to TOC](#table-of-contents)
 
 Mailing List
